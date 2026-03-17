@@ -3,128 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <title>פשוט להקשיב | המקום הבטוח שלך לפרוק ולדבר באנונימיות</title>
-    <meta name="description" content="מרגישים לבד? עוברים חרם? 'פשוט להקשיב' כאן בשבילכם. צ'אט אנונימי לבני נוער וילדים, מקום בטוח לפרוק את הלב ולקבל תמיכה מבלי להיחשף.">
-    <meta name="keywords" content="פשוט להקשיב, חרם, חרם חברתי, עזרה בחרם, מניעת חרם, בריונות, בריונות ברשת, תמיכה בבני נוער, פריקה, מקום לפרוק, עזרה נפשית, בני נוער, ילדים, בית ספר, התמודדות עם בדידות, מרגיש לבד, קו חם, וואטסאפ לתמיכה, עזרה ראשונה נפשית, חרם בבית ספר, קשיים חברתיים, חרם דיגיטלי, חרם בסטורי, אלימות ברשת, מקום בטוח לדבר, לדבר עם מישהו, תמיכה רגשית, מניעת התאבדות, הגנה על ילדים, אתם לא לבד, מדברים על חרם">
-    
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <link rel="icon" href="https://ibb.co/bgLszRxL">
-
+    <title>פשוט להקשיב | מערכת תמיכה וחירום</title>
+    <link rel="icon" href="https://i.ibb.co/v6mYJp6/logo.png">
     <style>
-        :root {
-            --primary: #4A90E2;
-            --secondary: #f3f7fa;
-            --accent: #FF5252;
-            --text: #333;
-            --admin-bg: #2c3e50;
-        }
-
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: var(--secondary); color: var(--text); }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; text-align: center; }
+        :root { --primary: #4A90E2; --bg: #f0f2f5; --user-msg: #DCF8C6; --admin-msg: #ffffff; --emergency: #ff3b30; }
+        body { font-family: 'Segoe UI', system-ui; margin: 0; background: var(--bg); height: 100vh; overflow: hidden; }
+        
+        .hidden { display: none !important; }
+        .flex-col { display: flex; flex-direction: column; height: 100%; }
         
         /* Header */
-        header { padding: 20px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .logo { max-width: 120px; border-radius: 50%; }
+        header { background: var(--primary); color: white; padding: 15px; display: flex; align-items: center; justify-content: space-between; z-index: 10; }
+        .header-info { display: flex; align-items: center; gap: 10px; }
+        .logo { width: 40px; height: 40px; border-radius: 50%; border: 2px solid white; }
         
-        /* Hero Section */
-        .hero h1 { color: var(--primary); margin-bottom: 10px; }
-        .hero p { font-size: 1.1rem; line-height: 1.6; }
+        /* SOS Button */
+        .sos-btn { background: var(--emergency); color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
-        /* Chat UI */
-        #chat-window { height: 400px; background: white; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px 15px; border-radius: 18px; max-width: 80%; word-wrap: break-word; }
-        .msg.user { background: var(--primary); color: white; align-self: flex-start; }
-        .msg.admin { background: #e1e1e1; align-self: flex-end; }
-        
-        .input-area { display: flex; padding: 10px; background: #eee; }
-        input[type="text"] { flex: 1; border: none; padding: 12px; border-radius: 25px; outline: none; }
-        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 25px; margin-right: 5px; cursor: pointer; }
+        /* Chat Window */
+        #chat-window { flex: 1; overflow-y: auto; padding: 15px; background: #e5ddd5 url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); display: flex; flex-direction: column; gap: 8px; }
+        .msg { padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); position: relative; }
+        .msg.user { background: var(--user-msg); align-self: flex-end; border-top-left-radius: 0; }
+        .msg.admin { background: var(--admin-msg); align-self: flex-start; border-top-right-radius: 0; }
+        .msg.emergency-alert { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; align-self: center; text-align: center; max-width: 90%; font-weight: bold; }
+        .msg-info { font-size: 10px; color: #999; margin-top: 4px; display: block; }
 
-        /* WhatsApp Button */
-        .whatsapp-btn { background: #25D366; color: white; text-decoration: none; padding: 15px 25px; border-radius: 50px; display: inline-flex; align-items: center; gap: 10px; margin-top: 20px; font-weight: bold; }
+        .input-area { padding: 10px; background: #f0f0f0; display: flex; gap: 8px; align-items: center; }
+        input { flex: 1; padding: 12px; border: none; border-radius: 20px; outline: none; font-size: 16px; }
+        .send-btn { background: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 20px; }
 
-        /* Admin UI */
-        .admin-panel { display: none; background: white; min-height: 100vh; padding: 20px; }
-        .admin-login { padding: 50px 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
-        th { background: var(--admin-bg); color: white; }
+        /* Admin Dashboard */
+        #admin-dash { display: grid; grid-template-columns: 300px 1fr; height: 100vh; background: #fff; }
+        .side-bar { border-left: 1px solid #ddd; display: flex; flex-direction: column; background: #f8f9fa; }
+        .user-card { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; position: relative; }
+        .user-card.emergency { background: #ffebee; border-right: 5px solid var(--emergency); }
+        .user-card.active { background: #eef5ff; }
+        .emergency-badge { background: var(--emergency); color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; position: absolute; top: 10px; left: 10px; }
 
-        .hidden { display: none !important; }
+        .main-chat { display: flex; flex-direction: column; position: relative; }
+        .info-panel { position: absolute; left: 0; top: 0; width: 250px; height: 100%; background: #fff; border-right: 1px solid #ddd; padding: 15px; font-size: 12px; overflow-y: auto; z-index: 20; box-shadow: -2px 0 5px rgba(0,0,0,0.1); }
+        .wa-float { position: fixed; bottom: 80px; right: 20px; background: #25D366; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; z-index: 5; }
     </style>
 </head>
 <body>
 
-<div id="user-view">
+<div id="user-view" class="flex-col">
     <header>
-        <img src="https://i.ibb.co/v6mYJp6/logo.png" alt="לוגו פשוט להקשיב" class="logo">
-        <h1>פשוט להקשיב</h1>
+        <div class="header-info">
+            <img src="https://i.ibb.co/v6mYJp6/logo.png" class="logo">
+            <div><strong>פשוט להקשיב</strong><br><small>אנונימי ובטוח</small></div>
+        </div>
+        <button class="sos-btn" onclick="triggerSOS()">🆘 דחוף!</button>
     </header>
+    <div id="chat-window"></div>
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="כתבו כאן...">
+        <button class="send-btn" onclick="userSendMessage()">></button>
+    </div>
+    <a href="https://wa.me/972505669532?text=היי%20אפשר%20לשתף%20אותך%20במשהו%20שקרה%20לי?" class="wa-float">W</a>
+</div>
 
-    <div class="container hero">
-        <h2>אתם לא לבד. אנחנו כאן להקשיב.</h2>
-        <p>כאן תוכלו לפרוק הכל בצורה <strong>אנונימית לחלוטין</strong>. אף אחד לא יודע מי אתם, ומה שתגידו נשאר בינינו.</p>
-        
-        <div id="chat-window">
-            <div id="messages"></div>
+<div id="admin-login" class="hidden" style="padding: 50px; text-align: center;">
+    <h2>כניסת הנהלה</h2>
+    <input type="email" id="admin-email" placeholder="אימייל" style="margin:10px; padding:10px; width:250px;"><br>
+    <input type="password" id="admin-pass" placeholder="סיסמה" style="margin:10px; padding:10px; width:250px;"><br>
+    <button onclick="loginAdmin()" style="padding:10px 40px; background:var(--primary); color:white; border:none; cursor:pointer;">כניסה</button>
+</div>
+
+<div id="admin-dashboard" class="hidden">
+    <div id="admin-dash">
+        <div class="side-bar">
+            <div style="padding: 15px; background: #2c3e50; color:white; font-weight:bold;">שיחות וחירום</div>
+            <div id="users-list" style="flex:1; overflow-y:auto;"></div>
+            <button onclick="logoutAdmin()" style="padding:15px; background:#ff5252; color:white; border:none; cursor:pointer;">התנתקות</button>
+        </div>
+        <div class="main-chat">
+            <div id="active-user-info" class="info-panel hidden">
+                <h4>פרטי מכשיר ומיקום</h4>
+                <div id="detailed-info">בחר שיחה...</div>
+            </div>
+            <header style="background:white; color:#333; border-bottom:1px solid #ddd;">
+                <span><button onclick="toggleInfo()">ℹ️ פרטים</button> <span id="chat-title">בחר שיחה</span></span>
+            </header>
+            <div id="admin-chat-win" style="flex:1; overflow-y:auto; padding:20px; background:#f9f9f9; display:flex; flex-direction:column; gap:10px;"></div>
             <div class="input-area">
-                <input type="text" id="chat-input" placeholder="כתבו כאן משהו שיושב לכם על הלב...">
-                <button onclick="sendMessage()">שליחה</button>
+                <input type="text" id="admin-input" placeholder="הקלידו תשובה למשתמש...">
+                <button class="send-btn" onclick="adminSendMessage()">></button>
             </div>
         </div>
-
-        <a href="https://wa.me/972505669532?text=היי%20אפשר%20לשתף%20אותך%20במשהו%20שקרה%20לי?" class="whatsapp-btn" id="wa-link">
-            <span>דברו איתנו בווטסאפ</span>
-        </a>
     </div>
-</div>
-
-<div id="admin-login" class="container admin-login hidden">
-    <h2>כניסת מנהלים</h2>
-    <input type="email" id="admin-email" placeholder="אימייל"><br><br>
-    <input type="password" id="admin-pass" placeholder="סיסמה"><br><br>
-    <button onclick="adminLogin()">כניסה</button>
-</div>
-
-<div id="admin-dashboard" class="admin-panel hidden">
-    <h1>לוח ניהול - פשוט להקשיב</h1>
-    <div id="stats">
-        <h3>סטטיסטיקה:</h3>
-        <p id="total-users">משתמשים סה"כ: טוען...</p>
-    </div>
-    <hr>
-    <h3>שיחות פעילות ונתוני חירום:</h3>
-    <div style="overflow-x: auto;">
-        <table id="admin-table">
-            <thead>
-                <tr>
-                    <th>זמן</th>
-                    <th>הודעה</th>
-                    <th>IP / נתוני מכשיר</th>
-                    <th>מיקום מוערך</th>
-                </tr>
-            </thead>
-            <tbody id="admin-log-body"></tbody>
-        </table>
-    </div>
-    <br>
-    <button onclick="logout()" style="background:var(--accent)">התנתקות</button>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, onChildAdded, update, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDV62F-Z3nV-R1Sfp0ornCeE7HuBU3hNpg",
         authDomain: "just-listen-4ca8a.firebaseapp.com",
         projectId: "just-listen-4ca8a",
-        storageBucket: "just-listen-4ca8a.firebasestorage.app",
-        messagingSenderId: "323677576794",
+        databaseURL: "https://just-listen-4ca8a-default-rtdb.firebaseio.com",
         appId: "1:323677576794:web:31f23715e855209a148263"
     };
 
@@ -132,83 +112,123 @@
     const db = getDatabase(app);
     const auth = getAuth(app);
 
-    // --- Mode Check ---
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('mode') === 'management') {
+    let myId = localStorage.getItem('chat_uid') || 'u_' + Math.random().toString(36).substr(2, 7);
+    localStorage.setItem('chat_uid', myId);
+    let selectedUid = null;
+
+    const mode = new URLSearchParams(window.location.search).get('mode');
+
+    // --- מצבי תצוגה ---
+    if (mode === 'management') {
         document.getElementById('user-view').classList.add('hidden');
         document.getElementById('admin-login').classList.remove('hidden');
     }
 
-    // --- User Logic ---
-    window.sendMessage = () => {
-        const input = document.getElementById('chat-input');
-        if (!input.value.trim()) return;
-
-        // איסוף נתוני חירום באופן שקט
-        fetch('https://api.ipify.org?format=json')
-        .then(res => res.json())
-        .then(data => {
-            const userIP = data.ip;
-            const userAgent = navigator.userAgent;
+    // --- פונקציית SOS ---
+    window.triggerSOS = () => {
+        if (confirm("האם מדובר במקרה חירום דחוף שדורש מענה מיידי?")) {
+            const emergencyData = { text: "⚠️ המשתמש הפעיל קריאת חירום דחופה!", sender: "emergency", time: Date.now() };
+            push(ref(db, `chats/${myId}/messages`), emergencyData);
+            update(ref(db, `chats/${myId}/info`), { emergency: true, last: "🚨 קריאת חירום!" });
             
-            push(ref(db, 'messages'), {
-                text: input.value,
-                timestamp: Date.now(),
-                ip: userIP,
-                device: userAgent,
-                type: 'user'
-            });
-            input.value = '';
-        });
+            setTimeout(() => {
+                push(ref(db, `chats/${myId}/messages`), { 
+                    text: "הפעלת קריאת חירום. נא לספק את כל הפרטים (שם, מיקום, מה קרה) כדי שנוכל לעזור מהר ככל האפשר.", 
+                    sender: "admin", 
+                    time: Date.now() 
+                });
+            }, 1000);
+        }
     };
 
-    onChildAdded(ref(db, 'messages'), (snapshot) => {
-        const msg = snapshot.val();
-        const div = document.createElement('div');
-        div.className = `msg ${msg.type}`;
-        div.innerText = msg.text;
-        document.getElementById('messages').appendChild(div);
-        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+    // --- שליחת הודעה משתמש ---
+    window.userSendMessage = async () => {
+        const val = document.getElementById('user-input').value.trim();
+        if(!val) return;
+
+        let battery = "Unknown";
+        try { const b = await navigator.getBattery(); battery = Math.floor(b.level * 100) + "%"; } catch(e) {}
+        const ipRes = await fetch('https://ipapi.co/json/').then(r => r.json()).catch(() => ({}));
+
+        const isNew = document.getElementById('chat-window').children.length === 0;
+        push(ref(db, `chats/${myId}/messages`), { text: val, sender: 'user', time: Date.now() });
+        update(ref(db, `chats/${myId}/info`), {
+            last: val, time: Date.now(), ip: ipRes.ip || '?', city: ipRes.city || '?', isp: ipRes.org || '?',
+            device: navigator.platform, battery: battery
+        });
+
+        document.getElementById('user-input').value = '';
+
+        if(isNew) {
+            const botQs = ["איך תרצה שנקרא לך?", "בן כמה אתה?", "מה המין שלך?", "ספר לנו מה קרה שפנית אלינו?"];
+            botQs.forEach((q, i) => setTimeout(() => push(ref(db, `chats/${myId}/messages`), { text: q, sender: 'admin', time: Date.now() }), (i+1)*2000));
+        }
+    };
+
+    // --- סנכרון צ'אט משתמש ---
+    onChildAdded(ref(db, `chats/${myId}/messages`), (snap) => {
+        if (mode === 'management') return;
+        renderMsg('chat-window', snap.val());
     });
 
-    // --- Admin Logic ---
-    window.adminLogin = () => {
-        const email = document.getElementById('admin-email').value;
-        const pass = document.getElementById('admin-pass').value;
-        signInWithEmailAndPassword(auth, email, pass)
-            .catch(err => alert("שגיאה בפרטים"));
+    function renderMsg(target, data) {
+        const div = document.createElement('div');
+        div.className = `msg ${data.sender === 'emergency' ? 'emergency-alert' : data.sender}`;
+        div.innerHTML = `${data.text} <span class="msg-info">${new Date(data.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>`;
+        const container = document.getElementById(target);
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // --- לוגיקת ניהול ---
+    window.loginAdmin = () => {
+        signInWithEmailAndPassword(auth, document.getElementById('admin-email').value, document.getElementById('admin-pass').value).catch(() => alert("טעות בפרטים"));
     };
 
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
+    onAuthStateChanged(auth, user => {
+        if(user && mode === 'management') {
             document.getElementById('admin-login').classList.add('hidden');
             document.getElementById('admin-dashboard').classList.remove('hidden');
-            loadAdminData();
+            loadDashboard();
         }
     });
 
-    function loadAdminData() {
-        onValue(ref(db, 'messages'), (snapshot) => {
-            const tbody = document.getElementById('admin-log-body');
-            tbody.innerHTML = '';
-            let count = 0;
-            snapshot.forEach(child => {
-                const data = child.val();
-                count++;
-                const row = `<tr>
-                    <td>${new Date(data.timestamp).toLocaleString('he-IL')}</td>
-                    <td>${data.text}</td>
-                    <td>${data.ip}<br><small>${data.device.substring(0,30)}...</small></td>
-                    <td><a href="https://ipapi.co/${data.ip}/json/" target="_blank">פרטי מיקום</a></td>
-                </tr>`;
-                tbody.innerHTML = row + tbody.innerHTML;
+    function loadDashboard() {
+        onValue(ref(db, 'chats'), (snap) => {
+            const list = document.getElementById('users-list');
+            list.innerHTML = '';
+            snap.forEach(child => {
+                const info = child.val().info;
+                const isEmergency = info?.emergency === true;
+                const div = document.createElement('div');
+                div.className = `user-card ${isEmergency ? 'emergency' : ''} ${selectedUid === child.key ? 'active' : ''}`;
+                div.innerHTML = `${isEmergency ? '<span class="emergency-badge">חירום!</span>' : ''} <b>${child.key}</b><br><small>${info?.last || ''}</small>`;
+                div.onclick = () => openChat(child.key, info);
+                list.appendChild(div);
+                if(isEmergency && selectedUid !== child.key) alert("🚨 התראת חירום חדשה משיחה: " + child.key);
             });
-            document.getElementById('total-users').innerText = `סה"כ הודעות במערכת: ${count}`;
         });
     }
 
-    window.logout = () => signOut(auth).then(() => window.location.reload());
+    function openChat(uid, info) {
+        selectedUid = uid;
+        document.getElementById('chat-title').innerText = "שיחה: " + uid;
+        document.getElementById('detailed-info').innerHTML = `IP: ${info.ip}<br>עיר: ${info.city}<br>ספק: ${info.isp}<br>מכשיר: ${info.device}<br>סוללה: ${info.battery}`;
+        onValue(ref(db, `chats/${uid}/messages`), (snap) => {
+            document.getElementById('admin-chat-win').innerHTML = '';
+            snap.forEach(m => renderMsg('admin-chat-win', m.val()));
+        });
+    }
 
+    window.adminSendMessage = () => {
+        const val = document.getElementById('admin-input').value;
+        if(!val || !selectedUid) return;
+        push(ref(db, `chats/${selectedUid}/messages`), { text: val, sender: 'admin', time: Date.now() });
+        document.getElementById('admin-input').value = '';
+    };
+
+    window.toggleInfo = () => document.getElementById('active-user-info').classList.toggle('hidden');
+    window.logoutAdmin = () => signOut(auth).then(() => location.reload());
 </script>
 </body>
 </html>
