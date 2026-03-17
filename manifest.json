@@ -1,0 +1,22 @@
+{
+  "name": "פשוט להקשיב",
+  "short_name": "להקשיב",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#4a90e2",
+  "theme_color": "#4a90e2",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://i.postimg.cc/fT2CKLHx/319405.jpg",
+      "sizes": "192x192",
+      "type": "image/jpg"
+    },
+    {
+      "src": "https://i.postimg.cc/fT2CKLHx/319405.jpg",
+      "sizes": "512x512",
+      "type": "image/jpg"
+    }
+  ]
+}
+
