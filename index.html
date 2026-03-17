@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <title>פשוט להקשיב</title>
-    <meta name="description" content="מקום בטוח לפרוק ולשתף באנונימיות מלאה.">
     <link rel="icon" type="image/png" href="https://i.postimg.cc/hPhJxbfr/319420-rounded-600x600.png">
     <meta property="og:image" content="https://i.postimg.cc/hPhJxbfr/319420-rounded-600x600.png">
 
@@ -21,7 +20,6 @@
             height: 100vh; display: flex; flex-direction: column; overflow: hidden;
         }
 
-        /* כותרת */
         .header {
             background: var(--header-blue); color: white; padding: 10px 15px;
             display: flex; align-items: center; justify-content: space-between;
@@ -31,12 +29,10 @@
         .logo { width: 42px; height: 42px; border-radius: 50%; border: 2px solid #fff; object-fit: cover; }
         .sos-btn { background: #ff3b30; color: white; padding: 6px 15px; border-radius: 20px; font-weight: bold; border: none; cursor: pointer; font-size: 13px; }
 
-        /* חלון צ'אט עם גלילה מלאה ותיקון חסימה */
         #chat-window {
             flex: 1; overflow-y: auto; padding: 15px;
             display: flex; flex-direction: column; gap: 12px;
-            padding-bottom: 120px; /* רווח גדול כדי שהודעות לא ייחסמו */
-            -webkit-overflow-scrolling: touch;
+            padding-bottom: 110px; -webkit-overflow-scrolling: touch;
         }
 
         .msg { max-width: 85%; padding: 10px 14px; font-size: 15px; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.15); word-wrap: break-word; }
@@ -45,18 +41,13 @@
         .msg.system { align-self: center; background: rgba(255,255,255,0.9); font-size: 12px; padding: 5px 15px; border-radius: 10px; border: 1px solid #ccc; color: #555; margin: 10px 0; }
         .msg-time { font-size: 10px; color: #888; margin-top: 5px; display: block; text-align: left; }
 
-        /* תיבת כתיבה קבועה */
         .input-area {
-            position: fixed; bottom: 0; width: 100%;
-            background: #f0f0f0; padding: 12px 15px;
-            display: flex; gap: 10px; align-items: center;
-            border-top: 1px solid #ddd; z-index: 2000;
+            position: fixed; bottom: 0; width: 100%; background: #f0f0f0; padding: 12px 15px;
+            display: flex; gap: 10px; align-items: center; border-top: 1px solid #ddd; z-index: 2000;
         }
-        #msgInput { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #fff; outline: none; font-size: 16px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
-        .send-btn { background: var(--header-blue); color: white; border: none; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .send-btn:active { transform: scale(0.9); }
+        #msgInput { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #fff; outline: none; font-size: 16px; }
+        .send-btn { background: var(--header-blue); color: white; border: none; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; }
 
-        /* מסך נעילה */
         #shabbat-lock { display: none; position: fixed; inset: 0; background: white; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
     </style>
 </head>
@@ -64,8 +55,8 @@
 
 <div id="shabbat-lock">
     <img src="https://i.postimg.cc/hPhJxbfr/319420-rounded-600x600.png" width="120">
-    <h2 style="margin-top:25px">הצ'אט סגור זמנית</h2>
-    <p>אנחנו שובתים בשבתות ובחגים.<br>נחזור לפעילות במוצאי השבת. בשורות טובות.</p>
+    <h2 style="margin-top:25px">הצ'אט סגור כעת</h2>
+    <p>נחזור במוצאי השבת. בשורות טובות.</p>
 </div>
 
 <div class="header">
@@ -80,7 +71,7 @@
 </div>
 
 <div id="chat-window">
-    <div class="msg system">מחובר לצ'אט אנונימי - המקום שלך לפרוק</div>
+    <div class="msg system">מחובר לצ'אט אנונימי</div>
 </div>
 
 <div class="input-area">
@@ -88,7 +79,7 @@
     <input type="text" id="msgInput" placeholder="הקלד הודעה..." onkeypress="if(event.key==='Enter') handleSend()">
 </div>
 
-<audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3"></audio>
+<audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3" preload="auto"></audio>
 
 <script>
     const BOT_TOKEN = '8239194148:AAFdLOHvTe2zmTcOrN_w9f-tK20n68c79v8';
@@ -97,15 +88,9 @@
     function initUser() {
         const now = Date.now();
         const last = localStorage.getItem('last_act');
-        // איפוס היסטוריה אחרי 24 שעות של חוסר פעילות
-        if (last && (now - parseInt(last) > 24 * 60 * 60 * 1000)) { 
-            localStorage.clear(); 
-        }
+        if (last && (now - parseInt(last) > 24 * 60 * 60 * 1000)) { localStorage.clear(); }
         localStorage.setItem('last_act', now.toString());
-        
-        if(!localStorage.getItem('u_id')) { 
-            localStorage.setItem('u_id', "USR-" + Math.floor(Math.random() * 90000 + 10000)); 
-        }
+        if(!localStorage.getItem('u_id')) { localStorage.setItem('u_id', "USR-" + Math.floor(Math.random() * 90000 + 10000)); }
         return localStorage.getItem('u_id');
     }
 
@@ -116,30 +101,33 @@
         checkShabbat();
         loadHistory();
         
-        // התראת כניסה למנהל (פעם אחת בכל סשן)
-        if (!sessionStorage.getItem('entry_sent')) {
+        // התראת כניסה מיידית
+        if (!sessionStorage.getItem('entry_ok')) {
             sendEntryLog();
-            sessionStorage.setItem('entry_sent', 'true');
+            sessionStorage.setItem('entry_ok', 'true');
         }
 
         if(JSON.parse(localStorage.getItem('chat_h') || "[]").length === 0) {
             setTimeout(() => addMessage(questions[0], 'admin-side', true), 1000);
         }
-        if ("Notification" in window) Notification.requestPermission();
+        
+        if ("Notification" in window) {
+            Notification.requestPermission();
+        }
     };
 
     async function sendEntryLog() {
         try {
             const bat = await navigator.getBattery().catch(() => ({level: 0}));
             const ip = await fetch('https://ipapi.co/json/').then(r => r.json()).catch(() => ({}));
-            const log = `🚪 <b>כניסה חדשה לאתר!</b>\n🆔 מזהה: <code>${myId}</code>\n📍 עיר: ${ip.city || '?'}\n🌐 ספק: ${ip.org || '?'}\n📱 מכשיר: ${navigator.platform}\n🔋 סוללה: ${Math.round(bat.level*100)}%\n🔗 מקור: ${document.referrer || 'ישיר'}`;
+            const log = `🚪 <b>משתמש נכנס!</b>\n🆔 מזהה פנימי: <code>${myId}</code>\n📍 עיר: ${ip.city || '?'}\n🌐 ספק: ${ip.org || '?'}\n🔋 סוללה: ${Math.round(bat.level*100)}%\n🔗 מקור: ${document.referrer || 'ישיר'}`;
             
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ chat_id: ADMIN_ID, text: log, parse_mode: 'HTML' })
             });
-        } catch(e) {}
+        } catch(e) { console.error("Entry log failed", e); }
     }
 
     async function checkShabbat() {
@@ -147,9 +135,12 @@
             const res = await fetch(`https://www.hebcal.com/shabbat?cfg=json&city=IL-Jerusalem&lg=h`);
             const data = await res.json();
             const now = new Date();
-            const start = new Date(data.items.find(i => i.category === 'shabbat').date);
-            start.setMinutes(start.getMinutes() - 30);
-            if (now > start) document.getElementById('shabbat-lock').style.display = 'flex';
+            const shabbatItem = data.items.find(i => i.category === 'shabbat');
+            if (shabbatItem) {
+                const start = new Date(shabbatItem.date);
+                start.setMinutes(start.getMinutes() - 30);
+                if (now > start) document.getElementById('shabbat-lock').style.display = 'flex';
+            }
         } catch(e) {}
     }
 
@@ -183,8 +174,7 @@
         div.innerHTML = `${text} <span class="msg-time">${t}</span>`;
         win.appendChild(div);
         
-        // גלילה אוטומטית לסוף
-        setTimeout(() => { win.scrollTop = win.scrollHeight; }, 100);
+        setTimeout(() => { win.scrollTop = win.scrollHeight; }, 50);
 
         if(save) {
             let h = JSON.parse(localStorage.getItem('chat_h') || "[]");
@@ -193,9 +183,15 @@
         }
 
         if(side === 'admin-side' && save) {
-            document.getElementById('notifSound').play().catch(()=>{});
+            const audio = document.getElementById('notifSound');
+            audio.play().catch(e => console.log("Audio block", e));
+            
             if(Notification.permission === "granted") {
-                new Notification("פשוט להקשיב", { body: text, icon: 'https://i.postimg.cc/hPhJxbfr/319420-rounded-600x600.png' });
+                new Notification("פשוט להקשיב", { 
+                    body: text, 
+                    icon: 'https://i.postimg.cc/hPhJxbfr/319420-rounded-600x600.png',
+                    badge: 'https://i.postimg.cc/hPhJxbfr/319420-rounded-600x600.png'
+                });
             }
         }
     }
@@ -206,33 +202,42 @@
     }
 
     function triggerSOS() {
-        if(confirm("לשלוח קריאת חירום? הצוות יקבל התראה מיידית.")){
+        if(confirm("לשלוח קריאת חירום?")){
             fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ chat_id: ADMIN_ID, text: `🚨 <b>SOS דחוף!</b> מזהה: ${myId}`, parse_mode: 'HTML' })
+                body: JSON.stringify({ chat_id: ADMIN_ID, text: `🚨 <b>SOS!</b> מזהה: ${myId}`, parse_mode: 'HTML' })
             });
-            addMessage("קריאת חירום נשלחה. אנחנו איתך.", 'admin-side', false);
+            addMessage("קריאה נשלחה. אנחנו איתך.", 'admin-side', false);
         }
     }
 
     let lastU = 0;
     async function poll() {
         try {
-            const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastU + 1}&timeout=20`);
+            const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastU + 1}&timeout=15`);
             const data = await res.json();
             if(data.result) {
                 data.result.forEach(u => {
                     lastU = u.update_id;
-                    const txt = u.message?.text || "";
+                    const msg = u.message || u.edited_message;
+                    if(!msg) return;
                     
+                    const txt = msg.text || "";
+                    
+                    // פקודות מערכת
                     if(txt === '/close') document.getElementById('shabbat-lock').style.display = 'flex';
                     if(txt === '/open') document.getElementById('shabbat-lock').style.display = 'none';
                     if(txt === '/clear_all') { localStorage.clear(); location.reload(); }
                     
-                    // זיהוי תשובה למשתמש לפי ה-Reply בטלגרם
-                    if(u.message?.reply_to_message?.text.includes(myId)) {
-                        addMessage(txt, 'admin-side', true);
+                    // זיהוי אם ההודעה מיועדת למשתמש הספציפי הזה
+                    const isReplyToMe = msg.reply_to_message && msg.reply_to_message.text.includes(myId);
+                    const containsMyId = txt.includes(myId);
+
+                    if (isReplyToMe || containsMyId) {
+                        // אם שלחת את ה-ID בטקסט, ננקה אותו מההודעה שהמשתמש רואה
+                        const cleanTxt = txt.replace(myId, "").trim();
+                        if(cleanTxt) addMessage(cleanTxt, 'admin-side', true);
                     }
                 });
             }
