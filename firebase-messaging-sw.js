@@ -11,11 +11,11 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-    const notificationTitle = payload.notification.title;
-    const notificationOptions = {
-        body: payload.notification.body,
-        icon: 'https://i.ibb.co/v6mYJp6/logo.png'
+    const title = payload.notification?.title || "פשוט להקשיב";
+    const options = {
+        body: payload.notification?.body || "קיבלת הודעה חדשה",
+        icon: 'https://i.postimg.cc/hPhJxbfr/319420-rounded-600x600.png',
+        badge: 'https://i.postimg.cc/hPhJxbfr/319420-rounded-600x600.png'
     };
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    self.registration.showNotification(title, options);
 });
-
