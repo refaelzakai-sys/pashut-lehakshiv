@@ -105,7 +105,6 @@
     const BOT_TOKEN = '8239194148:AAFdLOHvTe2zmTcOrN_w9f-tK20n68c79v8';
     const VAPID_KEY = 'BJg9k7cRbTe7_RPw-R2yRt5o2LuLPuk4V1P6Ddc3U7YOOBrXKaAwdHXm8XMk5TQK8k3dtwdaSponsGnAsGSaAWo';
 
-    // הגדרת Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyDV62F-Z3nV-R1Sfp0ornCeE7HuBU3hNpg",
         authDomain: "just-listen-4ca8a.firebaseapp.com",
@@ -125,7 +124,6 @@
         messaging = firebase.messaging();
     }
 
-    // רישום PWA Service Worker
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./firebase-messaging-sw.js')
@@ -200,7 +198,7 @@
                 for (let u of updates.result) {
                     const msg = u.message || u.edited_message;
                     if (msg && msg.text && msg.text.startsWith('/311')) {
-                        groupChatId = msg.chat.id;
+                        groupChatId = msg.chat.id.toString();
                         localStorage.setItem('tg_group_id', groupChatId);
                         break;
                     }
@@ -217,10 +215,14 @@
             });
 
             if (topicRes && topicRes.ok) {
-                threadId = topicRes.result.message_thread_id;
+                threadId = topicRes.result.message_thread_id.toString();
                 localStorage.setItem('tg_thread_id', threadId);
-                // מיפוי בין ה-Thread ID ל-User ID ב-Firebase
-                db.ref('threads/' + threadId).set({ userId: myId, fcmToken: localStorage.getItem('fcm_token') || '' });
+                
+                db.ref('threads/' + threadId).set({
+                    userId: myId,
+                    fcmToken: localStorage.getItem('fcm_token') || ''
+                });
+                
                 await sendDiagnosticLog(groupChatId, threadId);
             }
         }
@@ -298,7 +300,8 @@
 
         let step = parseInt(localStorage.getItem('q_step') || "0");
         if(step < questions.length - 1) {
-            step++; localStorage.setItem('q_step', step.toString());
+            step++; 
+            localStorage.setItem('q_step', step.toString());
             setTimeout(() => addMessage(questions[step], 'admin-side', true), 1200);
         }
     }
@@ -338,7 +341,6 @@
         h.forEach(m => addMessage(m.text, m.side, false));
     }
 
-    // הקשבה בזמן אמת להודעות מ-Firebase Realtime Database
     function listenToFirebase() {
         db.ref('chats/' + myId).on('child_added', (snapshot) => {
             const msg = snapshot.val();
@@ -367,38 +369,34 @@
         }
     }
 
-    // Polling יחיד שמתעדכן ב-Firebase בלבד (שרת מקשר)
     let lastU = 0;
     async function poll() {
         try {
-            const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastU + 1}&timeout=15`);
+            const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastU + 1}&timeout=10`);
             const data = await res.json();
             if(data.result) {
-                data.result.forEach(async u => {
+                for (let u of data.result) {
                     lastU = u.update_id;
                     const msg = u.message || u.edited_message;
-                    if(!msg) return;
+                    if(!msg) continue;
                     
                     const txt = msg.text || "";
                     const chatId = msg.chat.id;
 
                     if(txt.startsWith('/311')) {
-                        localStorage.setItem('tg_group_id', chatId);
+                        localStorage.setItem('tg_group_id', chatId.toString());
                     }
 
                     if(txt === '/close') document.getElementById('shabbat-lock').style.display = 'flex';
                     if(txt === '/open') document.getElementById('shabbat-lock').style.display = 'none';
                     if(txt === '/clear_all') { localStorage.clear(); location.reload(); }
 
-                    // כאשר מנהל עונה בתוך נושא (Topic) בטלגרם:
                     if (msg.message_thread_id && !msg.from.is_bot) {
-                        const threadId = msg.message_thread_id;
+                        const threadId = msg.message_thread_id.toString();
                         
-                        // קבלת מזהה המשתמש המשויך לנושא זה מ-Firebase
                         db.ref('threads/' + threadId).once('value', (snap) => {
                             const threadData = snap.val();
                             if (threadData && threadData.userId) {
-                                // כתיבת ההודעה ל-Firebase כדי שהדפדפן של המשתמש יקבל אותה בזמן אמת
                                 db.ref('chats/' + threadData.userId).push({
                                     text: txt,
                                     side: 'admin-side',
@@ -408,10 +406,12 @@
                             }
                         });
                     }
-                });
+                }
             }
-        } catch(e) {}
-        setTimeout(poll, 2000);
+        } catch(e) {
+            console.error("Poll Error:", e);
+        }
+        setTimeout(poll, 2500);
     }
     poll();
 </script>
